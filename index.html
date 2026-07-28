@@ -467,26 +467,27 @@
   #homePick .hp-cards{display:flex;gap:22px;justify-content:center;flex-wrap:wrap}
   .hp-card.hp-back{opacity:.82}.hp-card.hp-back:hover{opacity:1}
 
-  /* ===== Détecteur de dommage de poussée : écran plein, même ambiance que l'accueil ===== */
+  /* ===== Détecteur de dommage de poussée : écran épuré (pas de décor superflu, scène 3D coupée pendant l'usage) ===== */
   #pushDetector{position:fixed;inset:0;z-index:140;display:flex;align-items:center;justify-content:center;overflow:auto;padding:40px 16px}
   #hpBg2{position:absolute;inset:0;z-index:0;pointer-events:none;background:var(--panel)}
-  #hpStars2{position:absolute;inset:0;z-index:0;pointer-events:none;background-image:radial-gradient(1px 1px at 20% 30%,#cfe6ff 100%,transparent),radial-gradient(1px 1px at 70% 60%,#cfe6ff 100%,transparent),radial-gradient(1.4px 1.4px at 40% 80%,#cfe6ff 100%,transparent),radial-gradient(1px 1px at 85% 20%,#cfe6ff 100%,transparent);opacity:.35}
   .pd-in{position:relative;z-index:1;width:min(560px,92vw);padding:28px 26px;text-align:left}
   .pd-back{pointer-events:auto;border:1px solid var(--border);background:rgba(255,255,255,.03);color:var(--muted);font-family:var(--font);font-weight:600;font-size:12px;padding:6px 12px;border-radius:9px;cursor:pointer;margin-bottom:14px}
   .pd-back:hover{border-color:var(--border-strong);color:var(--frost)}
   .pd-in h2{font-family:var(--display);font-size:22px;letter-spacing:.06em;color:var(--frost);margin-bottom:8px}
   .pd-sub{font-size:12.5px;line-height:1.5;color:var(--muted);margin-bottom:16px}
-  #pdSearchResults{margin-top:6px;max-height:180px;overflow-y:auto}
-  #pdSelected{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
-  .pd-chip{display:flex;align-items:center;gap:6px;background:rgba(8,18,32,.7);border:1px solid var(--border);border-radius:99px;padding:4px 6px 4px 4px;font-size:12px;color:var(--frost)}
-  .pd-chip img{width:22px;height:22px;object-fit:contain;border-radius:99px;background:rgba(255,255,255,.04)}
-  .pd-chip i{font-style:normal;cursor:pointer;color:var(--muted);padding:0 3px}
-  .pd-chip i:hover{color:var(--danger)}
-  .pd-go{pointer-events:auto;margin-top:12px;border:1px solid var(--border-strong);background:linear-gradient(120deg,var(--ice),var(--ice-2));color:#06121f;font-family:var(--display);font-weight:800;font-size:13px;letter-spacing:.3px;padding:9px 16px;border-radius:9px;cursor:pointer}
+  #pdSearchResults{margin-top:6px;max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;background:rgba(8,18,32,.4)}
+  #pdSearchResults:empty{border:none;background:none}
+  #pdSelected{display:flex;flex-direction:column;gap:6px;margin-top:14px}
+  .pd-mob{display:flex;align-items:center;gap:10px;padding:6px 10px;border:1px solid var(--border);border-radius:10px;background:rgba(8,18,32,.55)}
+  .pd-mob img{width:36px;height:36px;object-fit:contain;border-radius:8px;background:rgba(255,255,255,.04);flex:0 0 auto}
+  .pd-mob b{flex:1;font-size:13.5px;color:var(--frost);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pd-mob i{font-style:normal;color:var(--danger);font-weight:800;cursor:pointer;padding:2px 6px;border-radius:6px}
+  .pd-mob i:hover{background:rgba(255,107,125,.14)}
+  .pd-go{pointer-events:auto;margin-top:12px;border:1px solid var(--border-strong);background:linear-gradient(120deg,var(--ice),var(--ice-2));color:#06121f;font-family:var(--display);font-weight:800;font-size:13px;letter-spacing:.3px;padding:9px 16px;border-radius:9px;cursor:pointer;width:100%}
   .pd-go:disabled{opacity:.5;cursor:not-allowed}
   #pdResults{margin-top:18px;display:flex;flex-direction:column;gap:8px}
-  .pd-row{display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:rgba(8,18,32,.55);font-size:13px}
-  .pd-row img{width:32px;height:32px;object-fit:contain;border-radius:6px;background:rgba(255,255,255,.04)}
+  .pd-row{display:flex;align-items:center;gap:10px;padding:7px 12px;border:1px solid var(--border);border-radius:10px;background:rgba(8,18,32,.55);font-size:13px}
+  .pd-row img{width:36px;height:36px;object-fit:contain;border-radius:8px;background:rgba(255,255,255,.04)}
   .pd-row .pd-name{flex:1;font-weight:600;color:var(--frost)}
   .pd-row .pd-tag{font-family:var(--display);font-weight:800;font-size:11.5px;padding:4px 9px;border-radius:99px;white-space:nowrap}
   .pd-tag.yes{background:rgba(255,107,125,.16);border:1px solid rgba(255,107,125,.4);color:var(--danger)}
@@ -581,7 +582,7 @@
 
 <!-- ===== DÉTECTEUR DE DOMMAGE DE POUSSÉE : outil autonome (pas de map 3D) ===== -->
 <div id="pushDetector" style="display:none">
-  <div id="hpBg2" aria-hidden="true"></div><div id="hpStars2" aria-hidden="true"></div>
+  <div id="hpBg2" aria-hidden="true"></div>
   <div class="pd-in card">
     <button class="pd-back" id="pdBack" type="button" title="Retour à l'accueil">◀ Retour</button>
     <h2>💥 Détecteur de dommage de poussée</h2>
@@ -786,6 +787,7 @@
   const loadEl=document.getElementById('loading');
   if(typeof THREE==='undefined'){loadEl.textContent='❌ Impossible de charger le moteur 3D (Three.js). Vérifie ta connexion et recharge.';return;}
   const API='https://api.dofusdb.fr';
+  let animPaused=false; // coupe tout calcul + rendu 3D pendant que le détecteur de poussée est ouvert (le canvas continuait de tourner en arrière-plan pour rien → lenteurs)
 
   /* ===== STATE ===== */
   const N=31,TILE=1,HALF=(N-1)/2,PA_MAX=12,PM_MAX=6,SWAP_RANGE=4; // grille interne 31×31 (la Porte de Songe fait 30 cases de large) ; la zone jouable (Songe) est réglable via state.mapW/mapH ; SWAP_RANGE = portée de l'Échange
@@ -1664,7 +1666,7 @@
   function pdAddMob(m){if(pdMobs.some(x=>x.id===m.id))return;pdMobs.push(m);renderPdSelected();}
   function renderPdSelected(){
     const box=el('pdSelected');
-    box.innerHTML=pdMobs.map((m,i)=>'<span class="pd-chip"><img src="'+(m.img?API+'/img/monsters/'+m.img+'.png':'')+'" onerror="this.style.visibility=\'hidden\'"><b>'+(m.name&&m.name.fr||'?')+'</b><i data-i="'+i+'">✕</i></span>').join('');
+    box.innerHTML=pdMobs.map((m,i)=>'<div class="pd-mob"><img src="'+(m.img?API+'/img/monsters/'+m.img+'.png':'')+'" onerror="this.style.visibility=\'hidden\'"><b>'+(m.name&&m.name.fr||'?')+'</b><i data-i="'+i+'">✕</i></div>').join('');
     box.querySelectorAll('i').forEach(i=>i.onclick=()=>{pdMobs.splice(+i.dataset.i,1);renderPdSelected();runPdResults();});
     el('pdGo').disabled=!pdMobs.length;
   }
@@ -3361,7 +3363,7 @@
 
   addEventListener('resize',()=>{perspCam.aspect=innerWidth/innerHeight;perspCam.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);updateCam();});
   const clock=new THREE.Clock();
-  function animate(){requestAnimationFrame(animate);const dt=clock.getDelta(),t=clock.elapsedTime;
+  function animate(){requestAnimationFrame(animate);if(animPaused)return;const dt=clock.getDelta(),t=clock.elapsedTime;
     portalGroup.children.forEach(g=>{if(g.userData&&g.userData.spin)g.userData.spin.rotation.z+=dt*1.6;}); // portails qui tournent
     if(edgeArrowGroup.visible){const o=0.5+0.5*Math.sin(t*3.2); // flèches de bord : glissent vers l'extérieur + pulsent
       edgeArrowGroup.children.forEach(g=>{g.position.x=g.userData.bx+g.userData.nx*o*0.3;g.position.z=g.userData.bz+g.userData.nz*o*0.3;g.userData.mat.opacity=0.35+0.55*o;});}
@@ -3416,8 +3418,8 @@
       if(state.map!=='songe'&&!isPorte(state.map))setMapMode('songe');
       else if(state.map==='songe'&&openRoomPick)openRoomPick();};
     el('hpSable').onclick=()=>{setMapMode('sable');bye();};
-    el('hpPush').onclick=()=>{hp.classList.add('bye');el('pushDetector').style.display='flex';};
-    el('pdBack').onclick=()=>{el('pushDetector').style.display='none';hp.classList.remove('bye');el('hpStep1b').style.display='none';el('hpStep1').style.display='flex';};
+    el('hpPush').onclick=()=>{hp.classList.add('bye');el('pushDetector').style.display='flex';animPaused=true;renderer.domElement.style.display='none';};
+    el('pdBack').onclick=()=>{el('pushDetector').style.display='none';renderer.domElement.style.display='';animPaused=false;hp.classList.remove('bye');el('hpStep1b').style.display='none';el('hpStep1').style.display='flex';};
     el('pdSearch').oninput=e=>{clearTimeout(pdSearchT);const v=e.target.value;pdSearchT=setTimeout(()=>pdSearch(v),280);};
     el('pdGo').onclick=runPushDetector;})(); // (plus de placeHome : l'interface reste centrée, le Comte-calque est ancré à la vignette en CSS)
   breedsReady=loadBreeds(); // promesse gardée : une classe posée AVANT la fin du chargement attend au lieu de retomber sur Crâ
