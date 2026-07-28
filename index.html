@@ -1654,14 +1654,14 @@
     if(!q||q.length<2){box.innerHTML='';return;}
     try{const r=await fetch(API+'/monsters?slug.fr[$search]='+encodeURIComponent(q)+'&$limit=10&lang=fr');const d=await r.json();
       const seen=new Set();const items=(d.data||[]).filter(m=>{if(!m.name||!m.name.fr||seen.has(m.name.fr))return false;seen.add(m.name.fr);return true;}).slice(0,8);
-      box.innerHTML=items.map((m,i)=>'<div class="res" data-i="'+i+'"><img src="'+(m.img?API+'/img/monsters/'+m.img+'.png':'')+'" onerror="this.style.visibility=\'hidden\'"><span class="nm">'+m.name.fr+'</span></div>').join('')||'<div class="loadmsg">Aucun résultat.</div>';
+      box.innerHTML=items.map((m,i)=>'<div class="res" data-i="'+i+'"><img src="'+(m.img||'')+'" onerror="this.style.visibility=\'hidden\'"><span class="nm">'+m.name.fr+'</span></div>').join('')||'<div class="loadmsg">Aucun résultat.</div>';
       box.querySelectorAll('.res').forEach((r,i)=>r.onclick=()=>{pdAddMob(items[i]);box.innerHTML='';el('pdSearch').value='';});
     }catch(e){box.innerHTML='<div class="loadmsg">Recherche indisponible (hors-ligne).</div>';}
   }
   function pdAddMob(m){if(pdMobs.some(x=>x.id===m.id))return;pdMobs.push(m);renderPdSelected();}
   function renderPdSelected(){
     const box=el('pdSelected');
-    box.innerHTML=pdMobs.map((m,i)=>'<div class="ritem mob pd-x-item"><span class="rico"><img src="'+(m.img?API+'/img/monsters/'+m.img+'.png':'')+'" onerror="this.style.visibility=\'hidden\'"></span><span class="rtx"><b>'+(m.name&&m.name.fr||'?')+'</b><i class="rs">prêt à analyser</i></span><i class="pd-x" data-i="'+i+'">✕</i></div>').join('');
+    box.innerHTML=pdMobs.map((m,i)=>'<div class="ritem mob pd-x-item"><span class="rico"><img src="'+(m.img||'')+'" onerror="this.style.visibility=\'hidden\'"></span><span class="rtx"><b>'+(m.name&&m.name.fr||'?')+'</b><i class="rs">prêt à analyser</i></span><i class="pd-x" data-i="'+i+'">✕</i></div>').join('');
     box.querySelectorAll('.pd-x').forEach(i=>i.onclick=()=>{pdMobs.splice(+i.dataset.i,1);renderPdSelected();runPdResults();});
     el('pdGo').disabled=!pdMobs.length;
   }
@@ -1670,7 +1670,7 @@
     const box=el('pdResults'),btn=el('pdGo');
     if(!pdMobs.length)return;
     btn.disabled=true;btn.textContent='⏳ Analyse en cours…';
-    box.innerHTML=pdMobs.map(m=>'<div class="ritem mob pd-x-item"><span class="rico"><img src="'+(m.img?API+'/img/monsters/'+m.img+'.png':'')+'" onerror="this.style.visibility=\'hidden\'"></span><span class="rtx"><b>'+(m.name&&m.name.fr||'?')+'</b><i class="rs">analyse…</i></span><span class="pd-tag unk">…</span></div>').join('');
+    box.innerHTML=pdMobs.map(m=>'<div class="ritem mob pd-x-item"><span class="rico"><img src="'+(m.img||'')+'" onerror="this.style.visibility=\'hidden\'"></span><span class="rtx"><b>'+(m.name&&m.name.fr||'?')+'</b><i class="rs">analyse…</i></span><span class="pd-tag unk">…</span></div>').join('');
     const rows=box.querySelectorAll('.pd-x-item');
     for(let i=0;i<pdMobs.length;i++){
       const tag=rows[i].querySelector('.pd-tag'),st=rows[i].querySelector('.rs');
