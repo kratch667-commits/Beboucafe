@@ -476,7 +476,8 @@
   .pd-title{font-family:var(--display);font-size:24px;letter-spacing:.06em;color:var(--frost);text-align:center;margin-top:4px;flex:0 0 auto}
   .pd-sub{font-size:12px;line-height:1.5;color:var(--muted);text-align:center;margin:6px 0 14px;flex:0 0 auto}
 
-  /* -- Zone haute : base complète (lecture seule) -- */
+  /* -- Zone haute : base complète (lecture seule), filtrable directement, plus de fenêtre popup -- */
+  #pdDbFilter{width:min(360px,90vw);margin-bottom:12px;flex:0 0 auto}
   #pdDbWrap{width:min(1100px,96vw);flex:1;min-height:0;border:1px solid var(--border);border-radius:16px;background:rgba(8,18,32,.3);overflow:hidden;display:flex}
   #pdDbGrid{flex:1;overflow-y:auto;padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:12px;align-content:start}
 
@@ -494,6 +495,8 @@
   #pdEmpty{grid-column:1/-1;text-align:center;color:var(--muted);font-size:13px;padding:30px 0}
   .pd-tile{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px 10px;border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,.02);transition:.15s}
   .pd-tile:hover{border-color:var(--border-strong);background:rgba(255,255,255,.045)}
+  .pd-tile.pd-tile-push{background:rgba(255,70,90,.16);border-color:rgba(255,70,90,.45)}
+  .pd-tile.pd-tile-push:hover{background:rgba(255,70,90,.24)}
   .pd-tile img{width:56px;height:56px;object-fit:contain;border-radius:8px;background:rgba(255,255,255,.04)}
   #pdGrid .pd-tile img{width:44px;height:44px}
   .pd-tile-nm{font-size:11.5px;color:var(--frost);font-weight:600;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
@@ -596,7 +599,7 @@
   <button class="pd-back" id="pdBack" type="button" title="Retour à l'accueil">◀ Retour</button>
   <h2 class="pd-title">💥 Détecteur de dommage de poussée</h2>
   <p class="pd-sub" id="pdDbStatus">Chargement de la base des monstres qui poussent…</p>
-
+  <input type="text" id="pdDbFilter" placeholder="Filtrer par nom…" autocomplete="off">
   <div id="pdDbWrap"><div id="pdDbGrid"></div></div>
 
   <div id="pdBottomBar">
@@ -1672,14 +1675,14 @@
 
   /* ---- Zone haute : base complète des monstres qui poussent (chargée une fois, mise en cache localStorage) ---- */
   const PD_CACHE_KEY='pdPushDB_v1',PD_CACHE_MS=7*24*3600*1000; // cache 7 jours : évite de rescanner toute la base à chaque ouverture
-  let pdDbLoading=false;
+  let pdDbLoading=false,pdDbFull=[]; // pdDbFull = liste maîtresse (tous les pousseurs connus) ; le champ de filtre agit dessus, sans jamais ouvrir de fenêtre
   async function pdOpenDatabase(force){
     if(pdDbLoading)return;
     const status=el('pdDbStatus');
     if(!force){
       try{const c=JSON.parse(localStorage.getItem(PD_CACHE_KEY)||'null');
         if(c&&Array.isArray(c.list)&&c.list.length&&(Date.now()-c.ts)<PD_CACHE_MS){
-          renderPdDbGrid(c.list);status.textContent=c.list.length+' monstre(s) connu(s) pour infliger des dégâts de poussée.';return;
+          pdDbFull=c.list;pdApplyDbFilter();status.textContent=c.list.length+' monstre(s) connu(s) pour infliger des dégâts de poussée.';return;
         }}catch(e){}
     }
     pdDbLoading=true;
@@ -1700,6 +1703,7 @@
     }
     const seen=new Set();const uniq=all.filter(m=>{const n=m.name&&m.name.fr;if(!n||seen.has(n))return false;seen.add(n);return true;});
     const results=[];const CH=15; // requêtes menées par lots pour ne pas surcharger l'API
+    pdDbFull=results;
     for(let i=0;i<uniq.length;i+=CH){
       const slice=uniq.slice(i,i+CH);
       await Promise.all(slice.map(async m=>{
@@ -1708,16 +1712,21 @@
         if(push===true)results.push({id:m.id,name:(m.name&&m.name.fr)||'?',img:m.img||''});
       }));
       setStatus('Analyse des sorts : '+Math.min(i+CH,uniq.length)+' / '+uniq.length+' — '+results.length+' pousseur(s) trouvé(s)…');
-      renderPdDbGrid(results); // affichage progressif : la grille se remplit au fur et à mesure
+      pdApplyDbFilter(); // affichage progressif : la grille se remplit au fur et à mesure, en respectant le filtre en cours
     }
     results.sort((a,b)=>a.name.localeCompare(b.name,'fr'));
-    renderPdDbGrid(results);
+    pdApplyDbFilter();
     setStatus(results.length+' monstre(s) connu(s) pour infliger des dégâts de poussée.');
     try{localStorage.setItem(PD_CACHE_KEY,JSON.stringify({ts:Date.now(),list:results}));}catch(e){}
   }
-  function renderPdDbGrid(list){
+  function pdApplyDbFilter(){ // filtre direct sur pdDbFull d'après le texte tapé — jamais de fenêtre qui s'ouvre, le présentoir se met juste à jour
+    const q=(el('pdDbFilter')&&el('pdDbFilter').value||'').trim().toLowerCase();
+    const list=q?pdDbFull.filter(m=>m.name.toLowerCase().includes(q)):pdDbFull;
+    renderPdDbGrid(list,!!q);
+  }
+  function renderPdDbGrid(list,filtered){
     const box=el('pdDbGrid');if(!box)return;
-    if(!list.length){box.innerHTML='<div id="pdEmpty">Recherche en cours…</div>';return;}
+    if(!list.length){box.innerHTML='<div id="pdEmpty">'+(filtered?'Aucun pousseur ne correspond à ce nom.':'Recherche en cours…')+'</div>';return;}
     const sorted=[...list].sort((a,b)=>a.name.localeCompare(b.name,'fr'));
     box.innerHTML=sorted.map(m=>'<div class="pd-tile"><img src="'+(m.img||'')+'" onerror="this.style.visibility=\'hidden\'"><span class="pd-tile-nm">'+m.name+'</span></div>').join('');
   }
@@ -1740,8 +1749,9 @@
     if(!pdMobs.length){box.innerHTML='<div id="pdEmpty">Aucun monstre ajouté pour l\'instant.</div>';return;}
     const order=pdMobs.map((m,i)=>({m,i})).sort((a,b)=>((a.m.name&&a.m.name.fr)||'').localeCompare((b.m.name&&b.m.name.fr)||'','fr'));
     box.innerHTML=order.map(({m,i})=>{
-      const badge=m._push===true?'<span class="pd-badge yes">💥</span>':m._push===false?'<span class="pd-badge no">✅</span>':m._push===undefined?'':'<span class="pd-badge unk">?</span>';
-      return'<div class="pd-tile" data-i="'+i+'">'+badge+'<i class="pd-x" data-i="'+i+'">✕</i><img src="'+(m.img||'')+'" onerror="this.style.visibility=\'hidden\'"><span class="pd-tile-nm">'+(m.name&&m.name.fr||'?')+'</span></div>';
+      const cls=m._push===true?' pd-tile-push':'';
+      const badge=m._push===false?'<span class="pd-badge no">✅</span>':m._push===undefined?'':m._push!==true?'<span class="pd-badge unk">?</span>':'';
+      return'<div class="pd-tile'+cls+'" data-i="'+i+'">'+badge+'<i class="pd-x" data-i="'+i+'">✕</i><img src="'+(m.img||'')+'" onerror="this.style.visibility=\'hidden\'"><span class="pd-tile-nm">'+(m.name&&m.name.fr||'?')+'</span></div>';
     }).join('');
     box.querySelectorAll('.pd-x').forEach(i=>i.onclick=e=>{e.stopPropagation();pdMobs.splice(+i.dataset.i,1);renderPdGrid();});
   }
@@ -3492,6 +3502,7 @@
     el('hpPush').onclick=()=>{hp.classList.add('bye');el('pushDetector').style.display='flex';animPaused=true;renderer.domElement.style.display='none';pdOpenDatabase();};
     el('pdBack').onclick=()=>{el('pushDetector').style.display='none';renderer.domElement.style.display='';animPaused=false;hp.classList.remove('bye');el('hpStep1b').style.display='none';el('hpStep1').style.display='flex';};
     el('pdSearch').oninput=e=>{clearTimeout(pdSearchT);const v=e.target.value;pdSearchT=setTimeout(()=>pdSearch(v),280);};
+    el('pdDbFilter').oninput=pdApplyDbFilter;
     el('pdGo').onclick=runPushDetector;})(); // (plus de placeHome : l'interface reste centrée, le Comte-calque est ancré à la vignette en CSS)
   breedsReady=loadBreeds(); // promesse gardée : une classe posée AVANT la fin du chargement attend au lieu de retomber sur Crâ
   // (plus de chrono de tour : jeu libre)
