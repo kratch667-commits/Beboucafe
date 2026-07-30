@@ -471,9 +471,9 @@
      scrollable en dessous où vont les adversaires ajoutés. Scène 3D coupée pendant l'usage (perf). ===== */
   #pushDetector{position:fixed;inset:0;z-index:140;display:flex;flex-direction:column;align-items:center;background:#04060b;padding:28px 24px 24px;overflow:hidden}
   #pdStars{position:absolute;inset:0;z-index:0;pointer-events:none;background-image:radial-gradient(1px 1px at 8% 22%,#cfe6ff 100%,transparent),radial-gradient(1px 1px at 82% 14%,#cfe6ff 100%,transparent),radial-gradient(1.4px 1.4px at 32% 68%,#cfe6ff 100%,transparent),radial-gradient(1px 1px at 62% 84%,#cfe6ff 100%,transparent),radial-gradient(1.2px 1.2px at 92% 58%,#cfe6ff 100%,transparent),radial-gradient(1px 1px at 46% 38%,#cfe6ff 100%,transparent),radial-gradient(1px 1px at 20% 90%,#cfe6ff 100%,transparent),radial-gradient(1.3px 1.3px at 70% 30%,#cfe6ff 100%,transparent);opacity:.55}
-  .pd-art{position:absolute;bottom:0;z-index:0;pointer-events:none;max-height:62vh;width:auto;filter:drop-shadow(0 10px 24px rgba(0,0,0,.65));opacity:.92}
-  .pd-art-left{left:-10px}
-  .pd-art-right{right:-10px}
+  .pd-art{position:absolute;bottom:0;z-index:0;pointer-events:none;height:100vh;width:auto;max-width:38vw;object-fit:contain;filter:drop-shadow(0 10px 30px rgba(0,0,0,.7));opacity:.95}
+  .pd-art-left{left:-40px}
+  .pd-art-right{right:-40px}
   @media (max-width:900px){.pd-art{display:none}} /* écran étroit : pas la place, on garde juste le fond étoilé */
   .pd-back,.pd-title,.pd-sub,#pdSearchWrap,.pd-go,#pdDbWrap{position:relative;z-index:1}
   .pd-back{position:absolute;top:20px;left:22px;pointer-events:auto;border:1px solid var(--border);background:rgba(255,255,255,.03);color:var(--muted);font-family:var(--font);font-weight:600;font-size:12px;padding:6px 12px;border-radius:9px;cursor:pointer;z-index:2}
@@ -594,8 +594,8 @@
 <!-- ===== DÉTECTEUR DE DOMMAGE DE POUSSÉE : outil autonome (pas de map 3D) ===== -->
 <div id="pushDetector" style="display:none">
   <div id="pdStars" aria-hidden="true"></div>
-  <img id="pdArtLeft" class="pd-art pd-art-left" alt="" aria-hidden="true">
-  <img id="pdArtRight" class="pd-art pd-art-right" alt="" aria-hidden="true">
+  <img id="pdArtLeft" class="pd-art pd-art-left" src="glourseleste.webp" alt="" aria-hidden="true">
+  <img id="pdArtRight" class="pd-art pd-art-right" src="chevalier-de-glace.png" alt="" aria-hidden="true">
   <button class="pd-back" id="pdBack" type="button" title="Retour à l'accueil">◀ Retour</button>
   <h2 class="pd-title">💥 Détecteur de dommage de poussée</h2>
   <p class="pd-sub">Ajoute chaque adversaire de ton combat, puis vérifie qui pousse.</p>
@@ -1671,17 +1671,6 @@
 
   /* ---- Zone haute : base complète des monstres qui poussent (chargée une fois, mise en cache localStorage) ---- */
   /* ---- Les adversaires DE TON combat : recherche, ajout, puis vérification. Les résultats vont dans le grand présentoir. ---- */
-  let pdArtLoaded=false;
-  async function pdLoadArt(){ // charge une seule fois les 2 illustrations décoratives via DofusDB (même image directe que le reste du site : m.img déjà une URL complète)
-    if(pdArtLoaded)return;pdArtLoaded=true;
-    const set=async(elId,name)=>{
-      try{const r=await fetch(API+'/monsters?slug.fr[$search]='+encodeURIComponent(name)+'&$limit=1&lang=fr');const d=await r.json();
-        const m=(d.data||[])[0];if(m&&m.img)el(elId).src=m.img;
-      }catch(e){}
-    };
-    set('pdArtLeft','Glourséleste');
-    set('pdArtRight','Chevalier de Glace');
-  }
   let pdMobs=[],pdSearchT;
   async function pdSearch(q){
     const box=el('pdSearchResults');
@@ -3454,7 +3443,7 @@
       if(state.map!=='songe'&&!isPorte(state.map))setMapMode('songe');
       else if(state.map==='songe'&&openRoomPick)openRoomPick();};
     el('hpSable').onclick=()=>{setMapMode('sable');bye();};
-    el('hpPush').onclick=()=>{hp.classList.add('bye');el('pushDetector').style.display='flex';animPaused=true;renderer.domElement.style.display='none';pdLoadArt();};
+    el('hpPush').onclick=()=>{hp.classList.add('bye');el('pushDetector').style.display='flex';animPaused=true;renderer.domElement.style.display='none';};
     el('pdBack').onclick=()=>{el('pushDetector').style.display='none';renderer.domElement.style.display='';animPaused=false;hp.classList.remove('bye');el('hpStep1b').style.display='none';el('hpStep1').style.display='flex';};
     el('pdSearch').oninput=e=>{clearTimeout(pdSearchT);const v=e.target.value;pdSearchT=setTimeout(()=>pdSearch(v),280);};
     el('pdGo').onclick=runPushDetector;})(); // (plus de placeHome : l'interface reste centrée, le Comte-calque est ancré à la vignette en CSS)
