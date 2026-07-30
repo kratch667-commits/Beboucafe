@@ -111,7 +111,7 @@
   #searchWrap h3{font-family:var(--display);font-size:13px;color:var(--ice);margin-bottom:7px}
   #results{margin-top:6px;max-height:190px;overflow-y:auto}
   .res{display:flex;align-items:center;gap:9px;padding:6px;border-radius:8px;cursor:pointer}
-  .res:hover{background:rgba(75,184,240,.12)}
+  .res:hover,.res.hi{background:rgba(75,184,240,.12)}
   .res img{width:34px;height:34px;border-radius:6px;background:rgba(0,0,0,.3);object-fit:contain}
   .res .nm{font-size:12.5px;color:var(--frost)}
   #hints{padding:12px 14px}
@@ -475,7 +475,7 @@
   .pd-art-left{left:-40px}
   .pd-art-right{right:-40px}
   @media (max-width:900px){.pd-art{display:none}#pdDbWrap{width:96vw}} /* écran étroit : pas la place pour les illustrations, on récupère la largeur */
-  .pd-back,.pd-title,.pd-sub,.pd-go{position:relative;z-index:1}
+  .pd-back,.pd-title,.pd-sub{position:relative;z-index:1}
   #pdDbWrap{position:relative;z-index:1}
   #pdSearchWrap{position:relative;z-index:3}
   .pd-back{position:absolute;top:20px;left:22px;pointer-events:auto;border:1px solid var(--border);background:rgba(255,255,255,.03);color:var(--muted);font-family:var(--font);font-weight:600;font-size:12px;padding:6px 12px;border-radius:9px;cursor:pointer;z-index:2}
@@ -487,8 +487,15 @@
   #pdSearchWrap input{width:100%}
   #pdSearchResults{position:absolute;top:calc(100% + 6px);left:0;right:0;max-height:240px;overflow-y:auto;border:1px solid var(--border-strong);border-radius:10px;background:#0d1c30;z-index:5;box-shadow:0 12px 28px rgba(0,0,0,.5)}
   #pdSearchResults:empty{border:none;background:none;box-shadow:none}
-  .pd-go{pointer-events:auto;margin-top:14px;border:1px solid var(--border-strong);background:linear-gradient(120deg,var(--ice),var(--ice-2));color:#06121f;font-family:var(--display);font-weight:800;font-size:13px;letter-spacing:.3px;padding:9px 22px;border-radius:9px;cursor:pointer;flex:0 0 auto}
-  .pd-go:disabled{opacity:.5;cursor:not-allowed}
+  #pdBtnRow{position:relative;z-index:1;display:flex;gap:10px;margin-top:14px;flex:0 0 auto}
+  .pd-clear{pointer-events:auto;border:1px solid var(--border);background:rgba(255,107,125,.1);color:var(--danger);font-family:var(--display);font-weight:800;font-size:13px;letter-spacing:.3px;padding:9px 18px;border-radius:9px;cursor:pointer;flex:0 0 auto}
+  .pd-clear:hover:not(:disabled){background:rgba(255,107,125,.2);border-color:rgba(255,107,125,.5)}
+  .pd-clear:disabled{opacity:.4;cursor:not-allowed}
+  #pdLegend{position:relative;z-index:1;display:flex;gap:20px;justify-content:center;flex-wrap:wrap;margin-top:12px;flex:0 0 auto}
+  .pd-leg{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--muted)}
+  .pd-leg-sw{width:14px;height:14px;border-radius:4px;display:inline-block;border:1px solid var(--border)}
+  .pd-leg-sw.yes{background:rgba(255,70,90,.35);border-color:rgba(255,70,90,.6)}
+  .pd-leg-sw.no{background:#101f34;border-color:var(--border)}
   #pdDbWrap{width:min(760px,68vw);flex:1;min-height:0;margin-top:22px;border:1px solid var(--border-strong);border-radius:16px;background:#0b1626;box-shadow:0 20px 50px rgba(0,0,0,.55);overflow:hidden;display:flex}
   #pdDbGrid{flex:1;overflow-y:auto;padding:18px;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px;align-content:start}
 
@@ -605,7 +612,13 @@
     <input type="text" id="pdSearch" placeholder="Ajoute un adversaire de ton combat…" autocomplete="off">
     <div id="pdSearchResults" class="scroll"></div>
   </div>
-  <button class="pd-go" id="pdGo" type="button" disabled>🔎 Vérifier mes adversaires</button>
+  <div id="pdBtnRow">
+    <button class="pd-clear" id="pdClear" type="button" disabled>🧹 Nettoyer</button>
+  </div>
+  <div id="pdLegend">
+    <span class="pd-leg"><i class="pd-leg-sw yes"></i>Fait des dégâts de poussée</span>
+    <span class="pd-leg"><i class="pd-leg-sw no"></i>Ne fait pas de dégâts de poussée</span>
+  </div>
   <div id="pdDbWrap"><div id="pdDbGrid"><div id="pdEmpty">Aucun monstre ajouté pour l'instant.</div></div></div>
 </div>
 
@@ -1673,15 +1686,29 @@
 
   /* ---- Zone haute : base complète des monstres qui poussent (chargée une fois, mise en cache localStorage) ---- */
   /* ---- Les adversaires DE TON combat : recherche, ajout, puis vérification. Les résultats vont dans le grand présentoir. ---- */
-  let pdMobs=[],pdSearchT;
+  let pdMobs=[],pdSearchT,pdSearchItems=[],pdSearchIdx=-1;
   async function pdSearch(q){
     const box=el('pdSearchResults');
-    if(!q||q.length<2){box.innerHTML='';return;}
+    pdSearchIdx=-1;
+    if(!q||q.length<2){box.innerHTML='';pdSearchItems=[];return;}
     try{const r=await fetch(API+'/monsters?slug.fr[$search]='+encodeURIComponent(q)+'&$limit=10&lang=fr');const d=await r.json();
       const seen=new Set();const items=(d.data||[]).filter(m=>{if(!m.name||!m.name.fr||seen.has(m.name.fr))return false;seen.add(m.name.fr);return true;}).slice(0,8);
+      pdSearchItems=items;
       box.innerHTML=items.map((m,i)=>'<div class="res" data-i="'+i+'"><img src="'+(m.img||'')+'" onerror="this.style.visibility=\'hidden\'"><span class="nm">'+m.name.fr+'</span></div>').join('')||'<div class="loadmsg">Aucun résultat.</div>';
-      box.querySelectorAll('.res').forEach((r,i)=>r.onclick=()=>{pdAddMob(items[i]);box.innerHTML='';el('pdSearch').value='';});
-    }catch(e){box.innerHTML='<div class="loadmsg">Recherche indisponible (hors-ligne).</div>';}
+      box.querySelectorAll('.res').forEach((r,i)=>r.onclick=()=>{pdAddMob(items[i]);box.innerHTML='';el('pdSearch').value='';pdSearchItems=[];});
+    }catch(e){box.innerHTML='<div class="loadmsg">Recherche indisponible (hors-ligne).</div>';pdSearchItems=[];}
+  }
+  function pdHighlight(){ // met en surbrillance le résultat sélectionné au clavier et le garde visible dans la liste
+    const rows=[...el('pdSearchResults').querySelectorAll('.res')];
+    rows.forEach((r,i)=>r.classList.toggle('hi',i===pdSearchIdx));
+    if(pdSearchIdx>=0&&rows[pdSearchIdx])rows[pdSearchIdx].scrollIntoView({block:'nearest'});
+  }
+  function pdSearchKeydown(e){ // ↓/↑ pour naviguer dans les résultats, Entrée pour ajouter le monstre sélectionné
+    if(!pdSearchItems.length)return;
+    if(e.key==='ArrowDown'){e.preventDefault();pdSearchIdx=Math.min(pdSearchIdx+1,pdSearchItems.length-1);pdHighlight();}
+    else if(e.key==='ArrowUp'){e.preventDefault();pdSearchIdx=Math.max(pdSearchIdx-1,0);pdHighlight();}
+    else if(e.key==='Enter'){e.preventDefault();const idx=pdSearchIdx>=0?pdSearchIdx:0;const m=pdSearchItems[idx];
+      if(m){pdAddMob(m);el('pdSearchResults').innerHTML='';el('pdSearch').value='';pdSearchItems=[];pdSearchIdx=-1;}}
   }
   const PD_MAX_MOBS=8;
   function pdAddMob(m){
@@ -1698,7 +1725,7 @@
   }
   function renderPdGrid(){ // affiche TOUS les adversaires ajoutés (pousseurs ou non), triés A→Z, avec leur statut
     const box=el('pdDbGrid');
-    el('pdGo').disabled=!pdMobs.length;
+    el('pdClear').disabled=!pdMobs.length;
     if(!pdMobs.length){box.innerHTML='<div id="pdEmpty">Aucun monstre ajouté pour l\'instant.</div>';return;}
     const order=pdMobs.map((m,i)=>({m,i})).sort((a,b)=>((a.m.name&&a.m.name.fr)||'').localeCompare((b.m.name&&b.m.name.fr)||'','fr'));
     box.innerHTML=order.map(({m,i})=>{
@@ -1708,18 +1735,7 @@
     }).join('');
     box.querySelectorAll('.pd-x').forEach(i=>i.onclick=e=>{e.stopPropagation();pdMobs.splice(+i.dataset.i,1);renderPdGrid();});
   }
-  async function runPushDetector(){
-    const btn=el('pdGo');
-    if(!pdMobs.length)return;
-    btn.disabled=true;btn.textContent='⏳ Vérification…';
-    pdMobs.forEach(m=>m._push='pending');renderPdGrid();
-    for(const m of pdMobs){
-      const forced=PD_PUSH_NAME_OVERRIDES.some(re=>re.test((m.name&&m.name.fr)||''));
-      m._push=forced?true:await monsterHasPush(m);
-      renderPdGrid();
-    }
-    btn.disabled=false;btn.textContent='🔎 Vérifier mes adversaires';
-  }
+
   let searchT;
   async function searchMonsters(q){
     const box=document.getElementById('results');
@@ -3455,7 +3471,8 @@
     el('hpPush').onclick=()=>{hp.classList.add('bye');el('pushDetector').style.display='flex';animPaused=true;renderer.domElement.style.display='none';};
     el('pdBack').onclick=()=>{el('pushDetector').style.display='none';renderer.domElement.style.display='';animPaused=false;hp.classList.remove('bye');el('hpStep1b').style.display='none';el('hpStep1').style.display='flex';};
     el('pdSearch').oninput=e=>{clearTimeout(pdSearchT);const v=e.target.value;pdSearchT=setTimeout(()=>pdSearch(v),280);};
-    el('pdGo').onclick=runPushDetector;})(); // (plus de placeHome : l'interface reste centrée, le Comte-calque est ancré à la vignette en CSS)
+    el('pdSearch').onkeydown=pdSearchKeydown;
+    el('pdClear').onclick=()=>{pdMobs=[];renderPdGrid();};})(); // (plus de placeHome : l'interface reste centrée, le Comte-calque est ancré à la vignette en CSS)
   breedsReady=loadBreeds(); // promesse gardée : une classe posée AVANT la fin du chargement attend au lieu de retomber sur Crâ
   // (plus de chrono de tour : jeu libre)
 })();
