@@ -1703,7 +1703,8 @@
     rows.forEach((r,i)=>r.classList.toggle('hi',i===pdSearchIdx));
     if(pdSearchIdx>=0&&rows[pdSearchIdx])rows[pdSearchIdx].scrollIntoView({block:'nearest'});
   }
-  function pdSearchKeydown(e){ // ↓/↑ pour naviguer dans les résultats, Entrée pour ajouter le monstre sélectionné
+  function pdSearchKeydown(e){ // ↓/↑ pour naviguer, Entrée pour ajouter, Échap pour sortir de la recherche
+    if(e.key==='Escape'){e.preventDefault();el('pdSearchResults').innerHTML='';el('pdSearch').value='';pdSearchItems=[];pdSearchIdx=-1;el('pdSearch').blur();return;}
     if(!pdSearchItems.length)return;
     if(e.key==='ArrowDown'){e.preventDefault();pdSearchIdx=Math.min(pdSearchIdx+1,pdSearchItems.length-1);pdHighlight();}
     else if(e.key==='ArrowUp'){e.preventDefault();pdSearchIdx=Math.max(pdSearchIdx-1,0);pdHighlight();}
